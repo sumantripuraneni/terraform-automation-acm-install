@@ -9,6 +9,7 @@ terraform apply -auto-approve
 echo "\nACM installation completed, starting MultiClusterHub deployment...\n"
 sleep 15
 
+
 cd ../deploy-mch
 terraform init
 terraform apply -auto-approve
