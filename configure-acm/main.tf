@@ -65,6 +65,28 @@ resource "kubernetes_manifest" "acm_git_channel" {
   }
 }
 
+#Create a rbac 
+resource "kubernetes_manifest" "acm_subscription_rbac" {
+  manifest = {
+    "apiVersion"    = "rbac.authorization.k8s.io/v1"
+    "kind"          = "ClusterRoleBinding"
+    "metadata"  = {
+      "name"        = "open-cluster-management:subscription-admin-0"
+    }
+    "roleRef"      = {
+        "apiGroup" = "rbac.authorization.k8s.io"
+        "kind"     = "ClusterRole"
+        "name"     = "open-cluster-management:subscription-admin"
+    }
+    "subjects" = [
+      {
+        "apiGroup" = "rbac.authorization.k8s.io"
+        "kind" = "User"
+        "name" =  "kube:admin"
+      }
+    ]
+  }
+}
 
 # Create a ACM Git subscription
 resource "kubernetes_manifest" "acm_git_subscription" {
