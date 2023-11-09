@@ -32,7 +32,13 @@ resource "kubernetes_manifest" "acm_mch" {
       "name"        = "multiclusterhub"
       "namespace"   = var.namespace
     }
-    "spec"     = {       
+    "spec"     = {
+      "overrides" = {
+         "components" = [{
+            "name" = "cluster-backup"
+            "enabled"="true"
+          }]
+        }
     }
   }
 }

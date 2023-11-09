@@ -1,0 +1,131 @@
+#Get Azure current config
+data "azurerm_client_config" "current" {}
+
+locals {
+  secret_config = <<-EOT
+    ## Cloud Credentail Secret 
+    apiVersion: v1
+    kind: Secret
+    metadata:
+        name: cloud-credentials-azure
+        namespace: open-cluster-management-backup
+    type: Opaque
+    stringData:
+       cloud: |
+         AZURE_SUBSCRIPTION_ID=${data.azurerm_client_config.current.subscription_id}
+         AZURE_TENANT_ID=${data.azurerm_client_config.current.tenant_id}
+         AZURE_CLIENT_ID=${data.azurerm_client_config.current.client_id}
+         AZURE_CLIENT_SECRET=${var.azure_client_secret}
+         AZURE_RESOURCE_GROUP=${var.azure_storage_resourcegroup_name}
+         AZURE_STORAGE_ACCOUNT_ACCESS_KEY=${var.azure_storage_account_access_key}
+         AZURE_CLOUD_NAME=AzurePublicCloud
+  EOT
+}
+
+resource "local_sensitive_file" "secret_config" {
+  filename = "${path.module}/secret.yaml"
+  content  = local.secret_config
+}
+
+resource "kubectl_manifest" "cloud_cred_secret_create" {
+    depends_on = [local_sensitive_file.secret_config]
+    sensitive_fields = [
+        "stringData.cloud"
+    ]
+    yaml_body = file("${path.module}/secret.yaml")
+}
+
+
+# Create a n instance for DPA
+resource "kubernetes_manifest" "dpa" {
+  depends_on   = [kubectl_manifest.cloud_cred_secret_create]
+  manifest = {
+    "apiVersion"    = "oadp.openshift.io/v1alpha1"
+    "kind"          = "DataProtectionApplication"
+    "metadata"  = {
+      "name"        = "dpa01"
+      "namespace"   =  "open-cluster-management-backup"
+    }
+    "spec"      = {
+      "backupLocations": [
+      {
+        "velero" = {
+          "config" = {
+            "resourceGroup" = "Velero_Backups",
+            "storageAccount" = "velerobackupsst",
+            "storageAccountKeyEnvVar" = "AZURE_STORAGE_ACCOUNT_ACCESS_KEY",
+            "subscriptionId" = "ee20a36e-1a3e-4e6e-bc8f-a87f9e0167dd"
+          },
+          "credential" = {
+            "key" = "cloud",
+            "name" = "cloud-credentials-azure"
+          },
+          "default" = "true",
+          "objectStorage" = {
+            "bucket" = "velero",
+            "prefix" = "backups"
+          },
+          "provider" = "azure"
+        }
+      }
+    ],
+    "configuration" = {
+      "restic" = {
+        "enable" = true
+      },
+      "velero" = {
+        "defaultPlugins" = [
+          "azure",
+          "openshift"
+        ]
+      }
+    },
+    "snapshotLocations" = [
+      {
+        "velero" = {
+          "config" = {
+            "incremental" = "true",
+            "resourceGroup" = "Velero_Backups",
+            "subscriptionId" = "ee20a36e-1a3e-4e6e-bc8f-a87f9e0167dd"
+          },
+          "provider" = "azure"
+        }
+      }
+    ]
+    }
+  }
+}
+
+# Check and wait for OADP BackupStorageLocation to be Available
+resource "null_resource"  "wait_for_backup_location_available" {
+  depends_on = [kubernetes_manifest.dpa]
+   provisioner "local-exec" {
+    command = <<SCRIPT
+    # Logic  to wait for the Backup location to be in Available state
+    while true; do
+      var=$(kubectl get BackupStorageLocation/dpa01-1 -n open-cluster-management-backup -o jsonpath='{ .status.phase }')
+      if [ "$var"  == "Available" ]; then
+        echo "BackupLocation status is Available"
+        exit 0
+     fi 
+      sleep 15
+    done   
+SCRIPT
+   }
+}
+
+# Create ACM MultiClusterHub Object
+resource "kubernetes_manifest" "backup_Schedule" {
+  manifest     = {
+    "apiVersion"    = "cluster.open-cluster-management.io/v1beta1"
+    "kind"          = "BackupSchedule"
+    "metadata" = {
+      "name"        = "backup-schedule-01"
+      "namespace"   = "open-cluster-management-backup"
+    }
+    "spec"     = {
+      "veleroSchedule" = "*/30 * * * *"
+      "veleroTtl"      = "240h"
+        }
+    }
+}
