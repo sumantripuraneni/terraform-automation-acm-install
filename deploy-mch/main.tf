@@ -1,4 +1,3 @@
-
 # Get ACM Subcription information
 data "kubernetes_resources" "check_acm_subcription" {
   api_version = "operators.coreos.com/v1alpha1"
@@ -37,6 +36,10 @@ resource "kubernetes_manifest" "acm_mch" {
          "components" = [{
             "name" = "cluster-backup"
             "enabled"="true"
+          },
+          {
+        "enabled" = "true"
+        "name" = "managedserviceaccount-preview"
           }]
         }
     }

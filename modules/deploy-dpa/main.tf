@@ -1,12 +1,9 @@
-#Get Azure current config
-data "azurerm_client_config" "current" {}
-
 data "template_file" "cloud_secret" {
   template = "${file("${path.module}/azure_cloud_credentails_secret.tpl")}"
   vars = {
-    subscription_id                  = "${data.azurerm_client_config.current.subscription_id}"
-    tenant_id                        = "${data.azurerm_client_config.current.tenant_id}"
-    client_id                        = "${data.azurerm_client_config.current.client_id}"
+    subscription_id                  = var.subscription_id
+    tenant_id                        = var.tenant_id
+    client_id                        = var.client_id
     azure_client_secret              = var.azure_client_secret
     azure_storage_resourcegroup_name = var.azure_storage_resourcegroup_name
     azure_storage_account_access_key = var.azure_storage_account_access_key
@@ -40,7 +37,7 @@ resource "kubernetes_manifest" "dpa" {
             "resourceGroup" =  var.azure_storage_resourcegroup_name,
             "storageAccount" = var.azure_storage_account_name,
             "storageAccountKeyEnvVar" = "AZURE_STORAGE_ACCOUNT_ACCESS_KEY",
-            "subscriptionId" = "${data.azurerm_client_config.current.subscription_id}"
+            "subscriptionId" = var.subscription_id
           },
           "credential" = {
             "key" = "cloud",
@@ -72,7 +69,7 @@ resource "kubernetes_manifest" "dpa" {
           "config" = {
             "incremental" = "true",
             "resourceGroup" = var.azure_storage_resourcegroup_name,
-            "subscriptionId" = "${data.azurerm_client_config.current.subscription_id}"
+            "subscriptionId" = var.subscription_id
           },
           "provider" = "azure"
         }
@@ -105,20 +102,4 @@ resource "null_resource"  "wait_for_backup_location_available" {
     fi
 SCRIPT
    }
-}
-
-# Create ACM MultiClusterHub Object
-resource "kubernetes_manifest" "backup_Schedule" {
-  manifest     = {
-    "apiVersion"    = "cluster.open-cluster-management.io/v1beta1"
-    "kind"          = "BackupSchedule"
-    "metadata" = {
-      "name"        = var.backup_schedule_name
-      "namespace"   = var.oadp_namespace
-    }
-    "spec"     = {
-      "veleroSchedule" = var.backup_schedule_cron
-      "veleroTtl"      = var.backup_ttl
-        }
-    }
 }
