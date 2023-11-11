@@ -1,3 +1,4 @@
+#! /bin/bash
 if [ -f hubcluster02.env ]
 then 
    source hubcluster02.env
@@ -22,6 +23,7 @@ echo "Step 1 - Installing ACM Operator"
 terraform workspace select hubcluste02
 
 cd install-acm-operator
+terraform workspace select hubcluste02
 terraform init 
 terraform apply -auto-approve
 
@@ -29,6 +31,7 @@ sleep 60
 
 echo "Step 2 - Deploy Multi Cluster Hub"
 cd ../deploy-mch
+terraform workspace select hubcluste02
 terraform init  
 terraform apply -auto-approve
 
@@ -36,12 +39,14 @@ sleep 60
 
 echo "Step 3 - Configure ACM channel, subscription"
 cd ../configure-acm
+terraform workspace select hubcluste02
 terraform init 
 terraform apply -auto-approve 
 
 sleep 60
 
-echo "Step 4 - Configure OADP - Backups"
-cd ../configure-oadp-backup
+echo "Step 4 - Configure OADP - restore"
+cd ../configure-oadp-restore
+terraform workspace select hubcluste02
 terraform init 
 terraform apply -auto-approve 
