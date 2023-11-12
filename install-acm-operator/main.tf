@@ -1,36 +1,14 @@
 
-# Check for namespace and create if does not exists
-resource "null_resource" "check_namespace" {
-  triggers      = {
-    build_number = "${timestamp()}"
-    namespace = var.namespace
-  }
-  provisioner "local-exec" {
-     command = <<SCRIPT
-      var=$(kubectl get namespaces|grep ${var.namespace}| wc -l)
-      if [ "$var" -eq "0" ]; then
-         kubectl create namespace ${var.namespace}
-      else 
-         echo '${var.namespace} already exists'
-      fi
-    SCRIPT
-  }
-    provisioner "local-exec" {
-    when    = destroy
-    command = <<SCRIPT
-    var=$(kubectl get ns  ${self.triggers.namespace} | wc -l) 
-    if [ "$var" -ne "0" ]; then
-        kubectl delete namespace ${self.triggers.namespace}
-    else
-        echo 'Namespace - ${self.triggers.namespace} does not exists'
-    fi
-    SCRIPT
-  }
+#Module to manage namespace
+module "check_kubernetes_namespace" {
+    source = "../modules/check_kubernetes_namespace"
+   
+   namespace = var.namespace
 }
 
 # ACM OperatorGroup object
 resource "kubernetes_manifest" "operator_group" {
-  depends_on   = [null_resource.check_namespace]
+  depends_on   = [module.check_kubernetes_namespace]
   manifest     = {
     "apiVersion"    = "operators.coreos.com/v1"
     "kind"          = "OperatorGroup"

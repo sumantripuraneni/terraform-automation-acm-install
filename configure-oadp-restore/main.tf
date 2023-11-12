@@ -27,7 +27,7 @@ resource "kubernetes_manifest" "restore_object" {
       "namespace"   = var.oadp_namespace
     }
     "spec"     = {
-      "syncRestoreWithNewBackups" = true
+      "syncRestoreWithNewBackups" = "true"
       "restoreSyncInterval"       = var.restore_sync_interval
       "cleanupBeforeRestore"      = "CleanupRestored"
       "veleroManagedClustersBackupName" =  "skip"
@@ -35,7 +35,5 @@ resource "kubernetes_manifest" "restore_object" {
       "veleroResourcesBackupName" = "latest"
         }
     }
-     depends_on = [
-    module.deploy-dpa
-  ]
+     depends_on = [module.deploy-dpa]
 }

@@ -1,36 +1,14 @@
 
-# Check for namespace and create if does not exists
-resource "null_resource" "check_namespace" {
-  triggers      = {
-    build_number = "${timestamp()}"
-    namespace = var.namespace
-  }
-  provisioner "local-exec" {
-     command = <<SCRIPT
-      var=$(kubectl get namespaces|grep ${var.namespace}| wc -l)
-      if [ "$var" -eq "0" ]; then
-         kubectl create namespace ${var.namespace}
-      else 
-         echo '${var.namespace} already exists'
-      fi
-    SCRIPT
-  }
-    provisioner "local-exec" {
-    when    = destroy
-    command = <<SCRIPT
-    var=$(kubectl get ns  ${self.triggers.namespace} | wc -l) 
-    if [ "$var" -ne "0" ]; then
-        kubectl delete namespace ${self.triggers.namespace}
-    else
-        echo 'Namespace - ${self.triggers.namespace} does not exists'
-    fi
-    SCRIPT
-  }
+#Module to manage namespace
+module "check_kubernetes_namespace" {
+    source = "../modules/check_kubernetes_namespace"
+   
+   namespace = var.namespace
 }
 
 # Create a secret with Github credentails
 resource "kubernetes_manifest" "github_credentails" {
-  depends_on   = [null_resource.check_namespace]
+  depends_on   = [module.check_kubernetes_namespace]
   manifest = {
     "apiVersion"    = "v1"
     "kind"          = "Secret"
@@ -66,26 +44,20 @@ resource "kubernetes_manifest" "acm_git_channel" {
 }
 
 #Create a rbac 
-resource "kubernetes_manifest" "acm_subscription_rbac" {
-  manifest = {
-    "apiVersion"    = "rbac.authorization.k8s.io/v1"
-    "kind"          = "ClusterRoleBinding"
-    "metadata"  = {
-      "name"        = "open-cluster-management:subscription-admin-0"
+resource "kubernetes_cluster_role_binding" "acm_subscription_rbac" {
+    metadata {
+      name       = "open-cluster-management:subscription-admin-0"
     }
-    "roleRef"      = {
-        "apiGroup" = "rbac.authorization.k8s.io"
-        "kind"     = "ClusterRole"
-        "name"     = "open-cluster-management:subscription-admin"
+    role_ref {
+        kind     = "ClusterRole"
+        name     = "open-cluster-management:subscription-admin"
+        api_group = "rbac.authorization.k8s.io"
     }
-    "subjects" = [
-      {
-        "apiGroup" = "rbac.authorization.k8s.io"
-        "kind" = "User"
-        "name" =  "kube:admin"
+    subject {
+        kind       = "User"
+        name       = "kube:admin"
+        api_group  = "rbac.authorization.k8s.io"
       }
-    ]
-  }
 }
 
 # Create a ACM Git subscription
@@ -104,7 +76,7 @@ resource "kubernetes_manifest" "acm_git_subscription" {
       }
     }
     "spec"      = {
-      "channel" = "acm-policies/acm-policies-channel"
+      "channel" = "${var.namespace}/acm-policies-channel"
       "placement" = {
           "local" = "true"
         }

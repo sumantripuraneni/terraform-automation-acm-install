@@ -44,6 +44,10 @@ resource "kubernetes_manifest" "acm_mch" {
         }
     }
   }
+    timeouts {
+    create = "30m"
+    delete = "30m"
+  }
 }
 
 # Check and wait for ACM MultiCluster Hub to be in running state
