@@ -1,0 +1,4 @@
+git_user = "sumantripuraneni"
+git_pat = "xxxxxx"
+git_repo_path = "https://github.com/dtrieu80/acm-bootstrap.git"
+git_context_path = "/acm-policies/policysets/clusterconfig"

@@ -23,19 +23,27 @@ sleep 15
 
 echo "Step 1 - Destroy OADP - Restore"
 cd configure-oadp-restore
-terraform workspace select hubcluster02
+echo "Present working directory: $(pwd)"
+terraform init -upgrade
+terraform workspace select -or-create hubcluster02
 terraform destroy -auto-approve
 
 echo "Step 2 - Destroy ACM channel, subscription"
 cd ../configure-acm
-terraform workspace select hubcluster02
+echo "Present working directory: $(pwd)"
+terraform init -upgrade
+terraform workspace select -or-create hubcluster02
 terraform destroy -auto-approve
 
 echo "Step 3 - Destroy ACM channel, subscription"
 cd ../deploy-mch
-terraform workspace select hubcluster02
+echo "Present working directory: $(pwd)"
+terraform init -upgrade
+terraform workspace select -or-create hubcluster02
 terraform destroy -auto-approve
 
 cd ../install-acm-operator
-terraform workspace select hubcluster02
+echo "Present working directory: $(pwd)"
+terraform init -upgrade
+terraform workspace select -or-create hubcluster02
 terraform destroy -auto-approve

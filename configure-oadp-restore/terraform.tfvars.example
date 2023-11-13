@@ -1,0 +1,4 @@
+azure_storage_resourcegroup_name="Velero_Backups"
+azure_storage_account_name="velerobackupsst"
+azure_client_secret="xxxxxx"
+azure_storage_account_access_key="xxxxxx"
