@@ -9,6 +9,8 @@
 *.hcl
 **/.hcl
 
+**/*yaml
+
 **/.terraform/*
 
 terraform.tfstate.d/*

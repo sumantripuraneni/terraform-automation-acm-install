@@ -38,8 +38,11 @@ terraform init -upgrade
 terraform apply -auto-approve
 
 sleep 60
+echo "Step 3 - Create Azure/Vmware credentails secrets in openshift-config"
+oc apply -f demo-creds.yaml
+oc apply -f vmware-demo-creds.yaml
 
-echo "Step 3 - Configure ACM channel, subscription"
+echo "Step 4 - Configure ACM channel, subscription"
 cd ../configure-acm
 terraform workspace select -or-create hubcluster02
 terraform init -upgrade

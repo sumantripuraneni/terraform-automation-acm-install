@@ -39,7 +39,11 @@ terraform apply -auto-approve
 
 sleep 60
 
-echo "Step 3 - Configure ACM channel, subscription"
+echo "Step 3 - Create Azure/Vmware credentails secrets in openshift-config"
+oc apply -f ./bash/demo-creds.yaml
+oc apply -f ./bash/vmware-demo-creds.yaml
+
+echo "Step 4 - Configure ACM channel, subscription"
 cd ../configure-acm
 echo "Present working directory: $(pwd)"
 terraform workspace select -or-create hubcluster01
@@ -48,7 +52,7 @@ terraform apply -auto-approve
 
 sleep 60
 
-echo "Step 4 - Configure OADP - Backups"
+echo "Step 5 - Configure OADP - Backups"
 cd ../configure-oadp-backup
 echo "Present working directory: $(pwd)"
 terraform workspace select -or-create hubcluster01

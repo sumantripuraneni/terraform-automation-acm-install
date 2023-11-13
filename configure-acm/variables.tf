@@ -12,7 +12,6 @@ variable "acm_cluster_deploy_pl_namespace" {
   default     = "acm-policies-deployments"
 }
 
-
 variable "git_user" {
   type        = string
   description = "The Git username."

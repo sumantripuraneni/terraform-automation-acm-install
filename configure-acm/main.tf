@@ -1,16 +1,10 @@
 
 #Module to manage namespace
 module "check_kubernetes_namespace" {
+    for_each = toset([var.acm_pl_namespace,var.acm_cluster_deploy_pl_namespace])
     source = "../modules/check_kubernetes_namespace"
    
-    namespace = var.acm_pl_namespace
-}
-
-#Module to manage namespace
-module "check_kubernetes_namespace" {
-    source = "../modules/check_kubernetes_namespace"
-   
-    namespace = var.acm_cluster_deploy_pl_namespace
+    namespace = "${each.key}"
 }
 
 
@@ -116,7 +110,7 @@ resource "kubernetes_manifest" "acm_git_subscription" {
 }
 
 # Create a ACM Git subscription for cluster deploy
-resource "kubernetes_manifest" "acm_git_subscription" {
+resource "kubernetes_manifest" "acm_git_subscription1" {
   depends_on   = [kubernetes_manifest.acm_git_channel]
   manifest = {
     "apiVersion"    = "apps.open-cluster-management.io/v1"
