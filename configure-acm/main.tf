@@ -3,8 +3,16 @@
 module "check_kubernetes_namespace" {
     source = "../modules/check_kubernetes_namespace"
    
-   namespace = var.namespace
+    namespace = var.acm_pl_namespace
 }
+
+#Module to manage namespace
+module "check_kubernetes_namespace" {
+    source = "../modules/check_kubernetes_namespace"
+   
+    namespace = var.acm_cluster_deploy_pl_namespace
+}
+
 
 # Create a secret with Github credentails
 resource "kubernetes_manifest" "github_credentails" {
@@ -14,7 +22,7 @@ resource "kubernetes_manifest" "github_credentails" {
     "kind"          = "Secret"
     "metadata"  = {
       "name"        = "github-user-pat"
-      "namespace"   =  var.namespace
+      "namespace"   =  var.acm_pl_namespace
     }
     "data"      = {
       "user"             = base64encode(var.git_user)
@@ -31,7 +39,7 @@ resource "kubernetes_manifest" "acm_git_channel" {
     "kind"          = "Channel"
     "metadata"  = {
       "name"        = "acm-policies-channel"
-      "namespace"   =  var.namespace
+      "namespace"   =  var.acm_pl_namespace
     }
     "spec"      = {
       "type"             = "Git"
@@ -83,7 +91,7 @@ resource "kubernetes_manifest" "acm_subscription_rbac" {
   }
 }
 
-# Create a ACM Git subscription
+# Create a ACM Git subscription for policies
 resource "kubernetes_manifest" "acm_git_subscription" {
   depends_on   = [kubernetes_manifest.acm_git_channel]
   manifest = {
@@ -91,15 +99,39 @@ resource "kubernetes_manifest" "acm_git_subscription" {
     "kind"          = "Subscription"
     "metadata"  = {
       "name"        = "sub-clusterconfig"
-      "namespace"   =  var.namespace
+      "namespace"   =  var.acm_pl_namespace
       "annotations" = {
         "apps.open-cluster-management.io/git-branch"       = var.git_branch
-        "apps.open-cluster-management.io/git-path"         = var.git_context_path
+        "apps.open-cluster-management.io/git-path"         = var.git_context_path_for_policies
         "apps.open-cluster-management.io/reconcile-option" = "replace"
       }
     }
     "spec"      = {
-      "channel" = "${var.namespace}/acm-policies-channel"
+      "channel" = "${var.acm_pl_namespace}/acm-policies-channel"
+      "placement" = {
+          "local" = "true"
+        }
+    }
+    }
+}
+
+# Create a ACM Git subscription for cluster deploy
+resource "kubernetes_manifest" "acm_git_subscription" {
+  depends_on   = [kubernetes_manifest.acm_git_channel]
+  manifest = {
+    "apiVersion"    = "apps.open-cluster-management.io/v1"
+    "kind"          = "Subscription"
+    "metadata"  = {
+      "name"        = "sub-clusterdeploy-hub2"
+      "namespace"   =  var.acm_cluster_deploy_pl_namespace
+      "annotations" = {
+        "apps.open-cluster-management.io/git-branch"       = var.git_branch
+        "apps.open-cluster-management.io/git-path"         = var.git_context_path_for_cluster_deploy
+        "apps.open-cluster-management.io/reconcile-option" = "replace"
+      }
+    }
+    "spec"      = {
+      "channel" = "${var.acm_pl_namespace}/acm-policies-channel"
       "placement" = {
           "local" = "true"
         }

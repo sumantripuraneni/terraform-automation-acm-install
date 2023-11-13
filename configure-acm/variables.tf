@@ -1,10 +1,17 @@
 #Variables 
 
-variable "namespace" {
+variable "acm_pl_namespace" {
   type        = string
   description = "The OpenShift name to install ACM."
   default     = "acm-policies"
 }
+
+variable "acm_cluster_deploy_pl_namespace" {
+  type        = string
+  description = "The OpenShift name to install ACM."
+  default     = "acm-policies-deployments"
+}
+
 
 variable "git_user" {
   type        = string
@@ -28,7 +35,12 @@ variable "git_branch" {
   default     = "main"
 }
 
-variable "git_context_path" {
+variable "git_context_path_for_policies" {
+  type        = string
+  description = "Path in the Git repo."
+}
+
+variable "git_context_path_for_cluster_deploy" {
   type        = string
   description = "Path in the Git repo."
 }
